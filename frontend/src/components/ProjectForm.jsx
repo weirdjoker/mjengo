@@ -1,82 +1,68 @@
-import React, {useState} from 'react';
-import { createProject } from '../services/api';
+import React, { useState } from 'react';
 
-const ProjectForm = () => {
-    const [formData, setFormData] = useState({
-        name:'',
-        description:'',
-        budget:'',
-        timeline:'',
-        builder:'',
+const buildersList = [
+  { username: 'builder1', name: 'Builder 1' },
+  { username: 'builder2', name: 'Builder 2' },
+];
 
+const ProjectForm = ({ onAdd, onClose }) => {
+  const [formData, setFormData] = useState({
+    name: '',
+    description: '',
+    image: '',
+    status: 'ongoing',
+    cost: '',
+    timeline: '',
+    builder: '',
+    progress: 0,
+  });
 
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    onAdd({ ...formData, id: Date.now() });
+    setFormData({
+      name: '',
+      description: '',
+      image: '',
+      status: 'ongoing',
+      cost: '',
+      timeline: '',
+      builder: '',
+      progress: 0,
     });
-    const[error, setError] = useState('');
+    onClose();
+  };
 
-    const handleChange = (e) => {
-        setFormData ({...formData, [e.target.name] : e.target.value})
-    };
-
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        try{
-            await createProject(formData);
-            alert('project created successfully!');
-            setFormData({name:'', description:'',budget:'',timeline:'', builder:''});
-        }catch(err){
-            setError('Failed to create project')
-        }
-    };
-
-    return (
-        <div className='p-4 max-w-md mx-auto'>
-            <h2 className='text-2xl font-bold mb-4'>Register New project</h2>
-            {error && <p classname='text-red-500 mb-4'>{error}</p>}
-            <form onSubmit={handleSubmit} className='space-y-4'>
-                <input type="text"
-                name='name'
-                value={formData.name}
-                onChange={handleChange}
-                placeholder='Project Name'
-                className='w-full p-2 border rounded'
-                required
-                 />
-                 <textarea name="description"
-                 value={formData.name}
-                 onChange={handleChange}
-                 placeholder='Description'
-                  className="w-full p-2 border rounded"
-                  rows='4'
-                  />
-                <input
-                  type="number"
-                  name="budget"
-                  value={formData.budget}
-                  onChange={handleChange}
-                  placeholder="Budget"
-                  className="w-full p-2 border rounded"
-                />
-                  <input type="text"
-                  name='timeline'
-                  value={formData.timeline}
-                  onChange={handleChange}
-                  placeholder='Timeline (e.g., 6 months' 
-                  className='w-full p-2 border rounded'
-                  />
-                  <select name="builder"
-                   value={formData.builder}
-                   onChange={handleChange}
-                   className='w-full p-2 border rounded'
-                   >
-                    <option value="">Select Builder</option>
-                    <option value="builder1">Builder 1</option>
-                    <option value="builder2">Builder 2</option>
-                   </select>
-                   <button type='submit' className='w-full bg-blue-600 text-white p-2 rounded hover:bg-blue-700'>
-                    Create Project
-                   </button>
-            </form>
-        </div>
-    );
+  return (
+    <form className="mb-6 bg-white p-4 rounded shadow" onSubmit={handleSubmit}>
+      <h2 className="text-lg font-bold mb-2">Add Project</h2>
+      <input type="text" name="name" value={formData.name} onChange={handleChange} placeholder="Project Name" className="border p-2 w-full rounded mb-2" required />
+      <textarea name="description" value={formData.description} onChange={handleChange} placeholder="Description" className="border p-2 w-full rounded mb-2" required />
+      <input type="url" name="image" value={formData.image} onChange={handleChange} placeholder="Image URL" className="border p-2 w-full rounded mb-2" required />
+      <select name="status" value={formData.status} onChange={handleChange} className="border p-2 w-full rounded mb-2" required>
+        <option value="ongoing">Ongoing</option>
+        <option value="done">Done</option>
+        <option value="paused">Paused</option>
+      </select>
+      <input type="number" name="cost" value={formData.cost} onChange={handleChange} placeholder="Cost Estimate" className="border p-2 w-full rounded mb-2" required />
+      <input type="text" name="timeline" value={formData.timeline} onChange={handleChange} placeholder="Timeline" className="border p-2 w-full rounded mb-2" required />
+      <select name="builder" value={formData.builder} onChange={handleChange} className="border p-2 w-full rounded mb-2" required>
+        <option value="">Select Builder</option>
+        {buildersList.map(b => (
+          <option key={b.username} value={b.username}>{b.name} ({b.username})</option>
+        ))}
+      </select>
+      <input type="number" name="progress" value={formData.progress} onChange={handleChange} placeholder="Progress (%)" min="0" max="100" className="border p-2 w-full rounded mb-2" />
+      <div className="flex gap-2">
+        <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded">Add Project</button>
+        <button type="button" className="bg-gray-400 text-white px-4 py-2 rounded" onClick={onClose}>Cancel</button>
+      </div>
+    </form>
+  );
 };
+
 export default ProjectForm;

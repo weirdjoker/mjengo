@@ -11,7 +11,11 @@ const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret_key';
 
 // Generate JWT token
 const generateToken = (user) => {
-  return jwt.sign({ userId: user._id, role: user.role }, JWT_SECRET, { expiresIn: '1h' });
+  return jwt.sign({ 
+    userId: user._id, 
+    id: user._id,  // Add this for consistency
+    role: user.role 
+  }, JWT_SECRET, { expiresIn: '1h' });
 };
 
 // Registration route
@@ -21,6 +25,7 @@ router.post(
     body('username').trim().notEmpty().withMessage('Username is required'),
     body('email').isEmail().withMessage('Valid email is required'),
     body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
+    body('name').trim().notEmpty().withMessage('Name is required'),
     body('role')
       .isIn(['owner', 'builder', 'supplier'])
       .withMessage('Invalid role')
@@ -33,7 +38,7 @@ router.post(
       return res.status(400).json({ errors: errors.array() });
     }
 
-    const { username, email, password, role, phone } = req.body;
+    const { username, email, password, name, role, phone } = req.body;
 
     try {
       const existingUser = await User.findOne({ $or: [{ email }, { username }] });
@@ -48,8 +53,9 @@ router.post(
         username,
         email,
         password: hashedPassword,
+        name,
         role: role.toLowerCase(),
-        phone,
+        phone: phone || '',
       });
 
       await newUser.save();
@@ -58,7 +64,13 @@ router.post(
 
       res.status(201).json({
         message: 'User registered successfully',
-        user: { id: newUser._id, username: newUser.username, email: newUser.email, role: newUser.role },
+        user: { 
+          id: newUser._id, 
+          username: newUser.username, 
+          email: newUser.email, 
+          name: newUser.name,
+          role: newUser.role 
+        },
         token,
       });
     } catch (error) {
@@ -99,7 +111,13 @@ router.post(
 
       res.status(200).json({
         message: 'Login successful',
-        user: { id: user._id, username: user.username, email: user.email, role: user.role },
+        user: { 
+          id: user._id, 
+          username: user.username, 
+          email: user.email, 
+          name: user.name,
+          role: user.role 
+        },
         token,
       });
     } catch (error) {
@@ -114,7 +132,10 @@ router.get('/google', passport.authenticate('google', { scope: ['profile', 'emai
 
 router.get(
   '/google/callback',
-  passport.authenticate('google', { session: false, failureRedirect: 'http://localhost:5173/login?error=Google authentication failed' }),
+  passport.authenticate('google', { 
+    session: false, 
+    failureRedirect: 'http://localhost:5173/login?error=auth_failed' 
+  }),
   (req, res) => {
     try {
       const token = generateToken(req.user);
@@ -122,12 +143,16 @@ router.get(
         id: req.user._id,
         username: req.user.username,
         email: req.user.email,
+        name: req.user.name,
         role: req.user.role,
       };
-      res.json({ token, user }); // Return JSON for API call
+      
+      // Redirect to frontend with token and user data
+      const userData = encodeURIComponent(JSON.stringify(user));
+      res.redirect(`http://localhost:5173/auth/callback?token=${token}&user=${userData}`);
     } catch (err) {
       console.error('Error in Google callback:', err);
-      res.status(500).json({ error: 'Google authentication failed' });
+      res.redirect('http://localhost:5173/login?error=auth_failed');
     }
   }
 );

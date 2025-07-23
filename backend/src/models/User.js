@@ -8,6 +8,8 @@ const userSchema = new mongoose.Schema({
   phone: { type: String, default: '' }, // Optional for Google OAuth
   role: { type: String, enum: ['owner', 'builder', 'supplier'], required: true },
   googleId: { type: String, unique: true, sparse: true },
+}, {
+  timestamps: true // Add timestamps for created/updated dates
 });
 
 module.exports = mongoose.model('User', userSchema);
